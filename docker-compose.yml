@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: capitalculture-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cc
+      POSTGRES_PASSWORD: ccpass
+      POSTGRES_DB: capitalculture
+    ports:
+      - "5432:5432"
+    volumes:
+      - cc_pg_data:/var/lib/postgresql/data
+
+  api:
+    container_name: capitalculture-api
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      JWT_EXPIRES_MIN: ${JWT_EXPIRES_MIN}
+      LOG_LEVEL: ${LOG_LEVEL}
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+
+volumes:
+  cc_pg_data:
